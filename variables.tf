@@ -1,40 +1,6 @@
-<!-- BEGIN_TF_DOCS -->
-## Requirements
-
-The following requirements are needed by this module:
-
-- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (~> 1.0)
-
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 4.0)
-
-## Providers
-
-The following providers are used by this module:
-
-- <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) (4.76.0)
-
-## Resources
-
-The following resources are used by this module:
-
-- [azurerm_batch_account.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/batch_account) (resource)
-- [azurerm_batch_application.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/batch_application) (resource)
-- [azurerm_batch_certificate.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/batch_certificate) (resource)
-- [azurerm_batch_job.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/batch_job) (resource)
-- [azurerm_batch_pool.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/batch_pool) (resource)
-
-## Required Inputs
-
-The following input variables are required:
-
-### <a name="input_batch"></a> [batch](#input\_batch)
-
-Description: describes batch account related configuration
-
-Type:
-
-```hcl
-object({
+variable "batch" {
+  description = "describes batch account related configuration"
+  type = object({
     name                                = string
     location                            = optional(string)
     resource_group_name                 = optional(string)
@@ -299,57 +265,44 @@ object({
       })), {})
     })), {})
   })
-```
 
-## Optional Inputs
+  validation {
+    condition     = var.batch.location != null || var.location != null
+    error_message = "location must be set on var.batch.location or on the module-level var.location."
+  }
 
-The following input variables are optional (have default values):
+  validation {
+    condition     = var.batch.resource_group_name != null || var.resource_group_name != null
+    error_message = "resource_group_name must be set on var.batch.resource_group_name or on the module-level var.resource_group_name."
+  }
 
-### <a name="input_location"></a> [location](#input\_location)
+  validation {
+    condition     = var.batch.pool_allocation_mode == null || contains(["BatchService", "UserSubscription"], coalesce(var.batch.pool_allocation_mode, "BatchService"))
+    error_message = "pool_allocation_mode must be one of BatchService or UserSubscription."
+  }
 
-Description: default azure region to be used.
+  validation {
+    condition = alltrue([
+      for cert in values(var.batch.certificates) : contains(["Cer", "Pfx"], cert.format)
+    ])
+    error_message = "certificate format must be one of Cer or Pfx."
+  }
+}
 
-Type: `string`
+variable "location" {
+  description = "default azure region to be used."
+  type        = string
+  default     = null
+}
 
-Default: `null`
+variable "resource_group_name" {
+  description = "default resource group to be used."
+  type        = string
+  default     = null
+}
 
-### <a name="input_resource_group_name"></a> [resource\_group\_name](#input\_resource\_group\_name)
-
-Description: default resource group to be used.
-
-Type: `string`
-
-Default: `null`
-
-### <a name="input_tags"></a> [tags](#input\_tags)
-
-Description: tags to be added to the resources
-
-Type: `map(string)`
-
-Default: `{}`
-
-## Outputs
-
-The following outputs are exported:
-
-### <a name="output_applications"></a> [applications](#output\_applications)
-
-Description: contains all batch applications
-
-### <a name="output_batch"></a> [batch](#output\_batch)
-
-Description: contains all batch account config
-
-### <a name="output_certificates"></a> [certificates](#output\_certificates)
-
-Description: contains all batch certificates
-
-### <a name="output_jobs"></a> [jobs](#output\_jobs)
-
-Description: contains all batch jobs
-
-### <a name="output_pools"></a> [pools](#output\_pools)
-
-Description: contains all batch pools
-<!-- END_TF_DOCS -->
+variable "tags" {
+  description = "tags to be added to the resources"
+  type        = map(string)
+  default     = {}
+}
