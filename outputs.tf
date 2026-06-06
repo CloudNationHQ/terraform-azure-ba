@@ -11,11 +11,13 @@ output "applications" {
 
 output "certificates" {
   description = "contains all batch certificates"
+  sensitive   = true
   value       = azurerm_batch_certificate.this
 }
 
 output "pools" {
   description = "contains all batch pools"
+  sensitive   = true
   value       = azurerm_batch_pool.this
 }
 
