@@ -51,6 +51,8 @@ The following resources are used by this module:
 - [azurerm_batch_certificate.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/batch_certificate) (resource)
 - [azurerm_batch_job.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/batch_job) (resource)
 - [azurerm_batch_pool.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/batch_pool) (resource)
+- [azurerm_monitor_diagnostic_setting.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/monitor_diagnostic_setting) (resource)
+- [azurerm_private_endpoint.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_endpoint) (resource)
 - [azurerm_role_assignment.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/role_assignment) (resource)
 
 ## Required Inputs
@@ -75,7 +77,7 @@ object({
     storage_account_authentication_mode = optional(string)
     storage_account_node_identity       = optional(string)
     allowed_authentication_modes        = optional(list(string))
-    encryption = optional(object({
+    customer_managed_key = optional(object({
       key_vault_key_id = optional(string)
     }))
     managed_identities = optional(object({
@@ -110,6 +112,34 @@ object({
       condition                        = optional(string)
       condition_version                = optional(string)
       principal_type                   = optional(string)
+    })), {})
+    private_endpoints = optional(map(object({
+      name                            = optional(string)
+      subnet_resource_id              = string
+      subresource_name                = optional(string)
+      private_dns_zone_resource_ids   = optional(list(string))
+      custom_network_interface_name   = optional(string)
+      tags                            = optional(map(string))
+      private_service_connection_name = optional(string)
+      is_manual_connection            = optional(bool)
+      request_message                 = optional(string)
+      ip_configurations = optional(map(object({
+        name               = optional(string)
+        private_ip_address = optional(string)
+        member_name        = optional(string)
+        subresource_name   = optional(string)
+      })))
+    })), {})
+    diagnostic_settings = optional(map(object({
+      name                           = optional(string)
+      log_analytics_workspace_id     = optional(string)
+      storage_account_id             = optional(string)
+      eventhub_authorization_rule_id = optional(string)
+      eventhub_name                  = optional(string)
+      log_analytics_destination_type = optional(string)
+      log_categories                 = optional(set(string))
+      log_category_groups            = optional(set(string))
+      metric_categories              = optional(set(string))
     })), {})
     applications = optional(map(object({
       name            = optional(string)
@@ -351,6 +381,10 @@ Description: contains all batch account configuration
 
 Description: contains all batch certificates
 
+### <a name="output_diagnostic_settings"></a> [diagnostic\_settings](#output\_diagnostic\_settings)
+
+Description: contains all diagnostic settings
+
 ### <a name="output_jobs"></a> [jobs](#output\_jobs)
 
 Description: contains all batch jobs
@@ -362,6 +396,10 @@ Description: contains all batch pools
 ### <a name="output_primary_access_key"></a> [primary\_access\_key](#output\_primary\_access\_key)
 
 Description: the primary access key of the batch account
+
+### <a name="output_private_endpoints"></a> [private\_endpoints](#output\_private\_endpoints)
+
+Description: contains all private endpoints
 
 ### <a name="output_secondary_access_key"></a> [secondary\_access\_key](#output\_secondary\_access\_key)
 

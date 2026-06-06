@@ -25,7 +25,7 @@ resource "azurerm_batch_account" "this" {
   }
 
   dynamic "encryption" {
-    for_each = var.batch.encryption != null ? { "this" = var.batch.encryption } : {}
+    for_each = var.batch.customer_managed_key != null ? { "this" = var.batch.customer_managed_key } : {}
 
     content {
       key_vault_key_id = encryption.value.key_vault_key_id
@@ -95,6 +95,83 @@ resource "azurerm_role_assignment" "this" {
   condition                        = each.value.condition
   condition_version                = each.value.condition_version
   principal_type                   = each.value.principal_type
+}
+
+# private endpoints
+resource "azurerm_private_endpoint" "this" {
+  for_each = var.batch.private_endpoints
+
+  name                          = coalesce(each.value.name, each.key)
+  resource_group_name           = coalesce(var.batch.resource_group_name, var.resource_group_name)
+  location                      = coalesce(var.batch.location, var.location)
+  subnet_id                     = each.value.subnet_resource_id
+  custom_network_interface_name = each.value.custom_network_interface_name
+  tags                          = coalesce(each.value.tags, var.tags)
+
+  private_service_connection {
+    name                           = coalesce(each.value.private_service_connection_name, "${each.key}-connection")
+    is_manual_connection           = coalesce(each.value.is_manual_connection, false)
+    private_connection_resource_id = azurerm_batch_account.this.id
+    subresource_names              = each.value.subresource_name != null ? [each.value.subresource_name] : ["batchAccount"]
+    request_message                = each.value.request_message
+  }
+
+  dynamic "private_dns_zone_group" {
+    for_each = each.value.private_dns_zone_resource_ids != null ? { "this" = each.value.private_dns_zone_resource_ids } : {}
+
+    content {
+      name                 = "default"
+      private_dns_zone_ids = private_dns_zone_group.value
+    }
+  }
+
+  dynamic "ip_configuration" {
+    for_each = each.value.ip_configurations != null ? each.value.ip_configurations : {}
+
+    content {
+      name               = ip_configuration.value.name
+      private_ip_address = ip_configuration.value.private_ip_address
+      member_name        = ip_configuration.value.member_name
+      subresource_name   = ip_configuration.value.subresource_name
+    }
+  }
+}
+
+# diagnostic settings
+resource "azurerm_monitor_diagnostic_setting" "this" {
+  for_each = var.batch.diagnostic_settings
+
+  name                           = coalesce(each.value.name, each.key)
+  target_resource_id             = azurerm_batch_account.this.id
+  log_analytics_workspace_id     = each.value.log_analytics_workspace_id
+  storage_account_id             = each.value.storage_account_id
+  eventhub_authorization_rule_id = each.value.eventhub_authorization_rule_id
+  eventhub_name                  = each.value.eventhub_name
+  log_analytics_destination_type = each.value.log_analytics_destination_type
+
+  dynamic "enabled_log" {
+    for_each = each.value.log_categories != null ? each.value.log_categories : []
+
+    content {
+      category = enabled_log.value
+    }
+  }
+
+  dynamic "enabled_log" {
+    for_each = each.value.log_category_groups != null ? each.value.log_category_groups : []
+
+    content {
+      category_group = enabled_log.value
+    }
+  }
+
+  dynamic "enabled_metric" {
+    for_each = each.value.metric_categories != null ? each.value.metric_categories : []
+
+    content {
+      category = enabled_metric.value
+    }
+  }
 }
 
 # batch applications

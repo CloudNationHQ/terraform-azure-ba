@@ -23,6 +23,16 @@ output "jobs" {
   value       = azurerm_batch_job.this
 }
 
+output "private_endpoints" {
+  description = "contains all private endpoints"
+  value       = azurerm_private_endpoint.this
+}
+
+output "diagnostic_settings" {
+  description = "contains all diagnostic settings"
+  value       = azurerm_monitor_diagnostic_setting.this
+}
+
 output "primary_access_key" {
   description = "the primary access key of the batch account"
   value       = azurerm_batch_account.this.primary_access_key

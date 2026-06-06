@@ -11,7 +11,7 @@ variable "batch" {
     storage_account_authentication_mode = optional(string)
     storage_account_node_identity       = optional(string)
     allowed_authentication_modes        = optional(list(string))
-    encryption = optional(object({
+    customer_managed_key = optional(object({
       key_vault_key_id = optional(string)
     }))
     managed_identities = optional(object({
@@ -46,6 +46,34 @@ variable "batch" {
       condition                        = optional(string)
       condition_version                = optional(string)
       principal_type                   = optional(string)
+    })), {})
+    private_endpoints = optional(map(object({
+      name                            = optional(string)
+      subnet_resource_id              = string
+      subresource_name                = optional(string)
+      private_dns_zone_resource_ids   = optional(list(string))
+      custom_network_interface_name   = optional(string)
+      tags                            = optional(map(string))
+      private_service_connection_name = optional(string)
+      is_manual_connection            = optional(bool)
+      request_message                 = optional(string)
+      ip_configurations = optional(map(object({
+        name               = optional(string)
+        private_ip_address = optional(string)
+        member_name        = optional(string)
+        subresource_name   = optional(string)
+      })))
+    })), {})
+    diagnostic_settings = optional(map(object({
+      name                           = optional(string)
+      log_analytics_workspace_id     = optional(string)
+      storage_account_id             = optional(string)
+      eventhub_authorization_rule_id = optional(string)
+      eventhub_name                  = optional(string)
+      log_analytics_destination_type = optional(string)
+      log_categories                 = optional(set(string))
+      log_category_groups            = optional(set(string))
+      metric_categories              = optional(set(string))
     })), {})
     applications = optional(map(object({
       name            = optional(string)
