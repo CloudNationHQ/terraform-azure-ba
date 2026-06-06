@@ -1,6 +1,7 @@
 output "batch" {
   description = "contains all batch account configuration"
   value       = azurerm_batch_account.this
+  sensitive   = true
 }
 
 output "applications" {
@@ -11,11 +12,13 @@ output "applications" {
 output "certificates" {
   description = "contains all batch certificate configuration"
   value       = azurerm_batch_certificate.this
+  sensitive   = true
 }
 
 output "pools" {
   description = "contains all batch pool configuration"
   value       = azurerm_batch_pool.this
+  sensitive   = true
 }
 
 output "jobs" {
