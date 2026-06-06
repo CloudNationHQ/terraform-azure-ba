@@ -78,6 +78,47 @@ resource "azurerm_batch_account" "this" {
   }
 }
 
+# private endpoints
+resource "azurerm_private_endpoint" "this" {
+  for_each = var.batch.private_endpoints != null ? var.batch.private_endpoints : {}
+
+  resource_group_name = coalesce(var.batch.resource_group_name, var.resource_group_name)
+  location            = coalesce(var.batch.location, var.location)
+
+  name                          = coalesce(each.value.name, each.key)
+  subnet_id                     = each.value.subnet_resource_id
+  custom_network_interface_name = each.value.custom_network_interface_name
+  tags                          = coalesce(each.value.tags, var.tags)
+
+  private_service_connection {
+    name                           = coalesce(each.value.private_service_connection_name, "${each.key}-connection")
+    is_manual_connection           = coalesce(each.value.is_manual_connection, false)
+    private_connection_resource_id = azurerm_batch_account.this.id
+    subresource_names              = each.value.subresource_name != null ? [each.value.subresource_name] : ["batchAccount"]
+    request_message                = each.value.request_message
+  }
+
+  dynamic "private_dns_zone_group" {
+    for_each = each.value.private_dns_zone_resource_ids != null ? { "this" = each.value.private_dns_zone_resource_ids } : {}
+
+    content {
+      name                 = "default"
+      private_dns_zone_ids = private_dns_zone_group.value
+    }
+  }
+
+  dynamic "ip_configuration" {
+    for_each = each.value.ip_configurations != null ? each.value.ip_configurations : {}
+
+    content {
+      name               = ip_configuration.value.name
+      private_ip_address = ip_configuration.value.private_ip_address
+      member_name        = ip_configuration.value.member_name
+      subresource_name   = ip_configuration.value.subresource_name
+    }
+  }
+}
+
 # batch application
 resource "azurerm_batch_application" "this" {
   for_each = var.batch.applications != null ? var.batch.applications : {}

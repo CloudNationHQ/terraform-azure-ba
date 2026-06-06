@@ -38,6 +38,23 @@ variable "batch" {
         })))
       }))
     }))
+    private_endpoints = optional(map(object({
+      name                            = optional(string)
+      subnet_resource_id              = string
+      subresource_name                = optional(string)
+      private_dns_zone_resource_ids   = optional(list(string))
+      custom_network_interface_name   = optional(string)
+      tags                            = optional(map(string))
+      private_service_connection_name = optional(string)
+      is_manual_connection            = optional(bool)
+      request_message                 = optional(string)
+      ip_configurations = optional(map(object({
+        name               = optional(string)
+        private_ip_address = optional(string)
+        member_name        = optional(string)
+        subresource_name   = optional(string)
+      })))
+    })))
     applications = optional(map(object({
       name            = optional(string)
       allow_updates   = optional(bool)
