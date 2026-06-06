@@ -40,7 +40,7 @@ The following requirements are needed by this module:
 
 The following providers are used by this module:
 
-- <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) (4.76.0)
+- <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) (~> 4.0)
 
 ## Resources
 
@@ -257,12 +257,6 @@ object({
           })))
         })))
       }))
-      certificates = optional(map(object({
-        id             = string
-        store_location = string
-        store_name     = optional(string)
-        visibility     = optional(list(string))
-      })))
       data_disks = optional(map(object({
         lun                  = number
         disk_size_gb         = number

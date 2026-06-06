@@ -191,12 +191,6 @@ variable "batch" {
           })))
         })))
       }))
-      certificates = optional(map(object({
-        id             = string
-        store_location = string
-        store_name     = optional(string)
-        visibility     = optional(list(string))
-      })))
       data_disks = optional(map(object({
         lun                  = number
         disk_size_gb         = number

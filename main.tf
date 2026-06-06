@@ -396,17 +396,6 @@ resource "azurerm_batch_pool" "this" {
     }
   }
 
-  dynamic "certificate" {
-    for_each = each.value.certificates != null ? each.value.certificates : {}
-
-    content {
-      id             = certificate.value.id
-      store_location = certificate.value.store_location
-      store_name     = certificate.value.store_name
-      visibility     = certificate.value.visibility
-    }
-  }
-
   dynamic "data_disks" {
     for_each = each.value.data_disks != null ? each.value.data_disks : {}
 
