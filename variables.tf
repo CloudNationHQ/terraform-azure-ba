@@ -1,85 +1,7 @@
-# Batch
+variable "batch" {
+  description = "Batch account configuration object, including its applications, certificates, pools and jobs."
 
-This terraform module simplifies the creation and management of azure batch
-resources, providing customizable options for the account, applications,
-certificates, pools and jobs, all managed through code.
-
-## Features
-
-Manages a batch account as the primary resource.
-
-Supports applications, certificates, pools and jobs in a single complex object.
-
-Embeds the AVM interfaces for managed identities, customer managed keys, role
-assignments, diagnostic settings and private endpoints.
-
-Utilization of terratest for robust validation.
-
-## Private Endpoint
-
-This module embeds private endpoint support directly (`batch.private_endpoints`).
-Embedding is the right choice when the batch account is managed in the same
-terraform apply with public network access disabled.
-
-When the private endpoint belongs to a different state file or team, use our
-standalone [terraform-azure-pe](https://github.com/CloudNationHQ/terraform-azure-pe)
-module instead and keep the account publicly accessible. Both patterns are
-supported and the choice belongs to the caller.
-
-## Usage
-
-```hcl
-module "batch" {
-  source = "cloudnationhq/ba/azure"
-
-  batch = {
-    name                = "demobatchaccount"
-    location            = "westeurope"
-    resource_group_name = "demo-rg"
-  }
-}
-```
-
-<!-- BEGIN_TF_DOCS -->
-## Requirements
-
-The following requirements are needed by this module:
-
-- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (~> 1.0)
-
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 4.0)
-
-## Providers
-
-The following providers are used by this module:
-
-- <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) (~> 4.0)
-
-## Resources
-
-The following resources are used by this module:
-
-- [azurerm_batch_account.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/batch_account) (resource)
-- [azurerm_batch_application.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/batch_application) (resource)
-- [azurerm_batch_certificate.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/batch_certificate) (resource)
-- [azurerm_batch_job.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/batch_job) (resource)
-- [azurerm_batch_pool.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/batch_pool) (resource)
-- [azurerm_monitor_diagnostic_setting.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/monitor_diagnostic_setting) (resource)
-- [azurerm_private_endpoint.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_endpoint) (resource)
-- [azurerm_role_assignment.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/role_assignment) (resource)
-
-## Required Inputs
-
-The following input variables are required:
-
-### <a name="input_batch"></a> [batch](#input\_batch)
-
-Description: Batch account configuration object, including its applications, certificates, pools and jobs.
-
-Type:
-
-```hcl
-object({
+  type = object({
     name                                = string
     location                            = optional(string)
     resource_group_name                 = optional(string)
@@ -387,61 +309,50 @@ object({
       })))
     })))
   })
-```
 
-## Optional Inputs
+  validation {
+    condition     = var.batch.location != null || var.location != null
+    error_message = "location must be provided on var.batch.location or the global var.location."
+  }
 
-The following input variables are optional (have default values):
+  validation {
+    condition     = var.batch.resource_group_name != null || var.resource_group_name != null
+    error_message = "resource_group_name must be provided on var.batch.resource_group_name or the global var.resource_group_name."
+  }
 
-### <a name="input_location"></a> [location](#input\_location)
+  validation {
+    condition     = var.batch.pool_allocation_mode == null || contains(["BatchService", "UserSubscription"], coalesce(var.batch.pool_allocation_mode, "BatchService"))
+    error_message = "pool_allocation_mode must be one of: BatchService, UserSubscription."
+  }
 
-Description: Default location used when not set on the batch object.
+  validation {
+    condition     = var.batch.storage_account_authentication_mode == null || contains(["StorageKeys", "BatchAccountManagedIdentity"], coalesce(var.batch.storage_account_authentication_mode, "StorageKeys"))
+    error_message = "storage_account_authentication_mode must be one of: StorageKeys, BatchAccountManagedIdentity."
+  }
 
-Type: `string`
+  validation {
+    condition = alltrue([
+      for c in(var.batch.certificates != null ? values(var.batch.certificates) : []) :
+      contains(["Cer", "Pfx"], c.format)
+    ])
+    error_message = "certificate format must be one of: Cer, Pfx."
+  }
+}
 
-Default: `null`
+variable "location" {
+  description = "Default location used when not set on the batch object."
+  type        = string
+  default     = null
+}
 
-### <a name="input_resource_group_name"></a> [resource\_group\_name](#input\_resource\_group\_name)
+variable "resource_group_name" {
+  description = "Default resource group name used when not set on the batch object."
+  type        = string
+  default     = null
+}
 
-Description: Default resource group name used when not set on the batch object.
-
-Type: `string`
-
-Default: `null`
-
-### <a name="input_tags"></a> [tags](#input\_tags)
-
-Description: Tags applied to resources when not overridden on the object.
-
-Type: `map(string)`
-
-Default: `{}`
-
-## Outputs
-
-The following outputs are exported:
-
-### <a name="output_applications"></a> [applications](#output\_applications)
-
-Description: Map of batch applications keyed by their configuration key.
-
-### <a name="output_batch"></a> [batch](#output\_batch)
-
-Description: The full batch account resource, including the (sensitive) primary and secondary access keys.
-
-### <a name="output_certificates"></a> [certificates](#output\_certificates)
-
-Description: Map of batch certificates keyed by their configuration key (contains sensitive certificate data).
-
-### <a name="output_jobs"></a> [jobs](#output\_jobs)
-
-Description: Map of batch jobs keyed by '<pool>.<job>'.
-
-### <a name="output_pools"></a> [pools](#output\_pools)
-
-Description: Map of batch pools keyed by their configuration key (may contain sensitive credentials).
-<!-- END_TF_DOCS -->
-
-## License
-
-MIT Licensed. See [LICENSE](./LICENSE) for full details.
+variable "tags" {
+  description = "Tags applied to resources when not overridden on the object."
+  type        = map(string)
+  default     = {}
+}
