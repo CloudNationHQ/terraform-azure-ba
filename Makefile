@@ -39,4 +39,4 @@ validate:
 	terraform init -backend=false
 	terraform validate
 	@echo "Cleaning up initialization files..."
-	rm -rf .terraform terraform.tfstate terraform.tfstate.backup .terraform.lock.hcl
+	rm -rf .terraform terraform.tfstate terraform.tfstate.backup
