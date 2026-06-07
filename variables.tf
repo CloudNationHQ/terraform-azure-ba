@@ -241,12 +241,12 @@ variable "batch" {
   })
 
   validation {
-    condition     = lookup(var.batch, "location", null) != null || var.location != null
+    condition     = var.batch.location != null || var.location != null
     error_message = "location must be set on var.batch.location or on the module-level var.location."
   }
 
   validation {
-    condition     = lookup(var.batch, "resource_group_name", null) != null || var.resource_group_name != null
+    condition     = var.batch.resource_group_name != null || var.resource_group_name != null
     error_message = "resource_group_name must be set on var.batch.resource_group_name or on the module-level var.resource_group_name."
   }
 }
