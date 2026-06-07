@@ -1,58 +1,6 @@
-# Batch
-
-This terraform module simplifies the creation and management of azure batch resources, providing customizable options for batch accounts, applications, certificates, pools and jobs, all managed through code.
-
-## Features
-
-Manages an azure batch account as the primary resource.
-
-Capability to handle batch applications, pools and jobs.
-
-Supports pool configuration including scaling, container workloads, mounts, start tasks and node networking.
-
-Utilization of terratest for robust validation.
-
-## Certificate Deprecation
-
-The `azurerm_batch_certificate` resource is deprecated upstream, as the azure batch certificates feature has been retired by microsoft. It is retained in this module because it is part of the module contract and azurerm offers no drop-in replacement. The modern pattern is to reference key vault certificates from a pool instead. Terraform emits a deprecation warning for this resource; it still applies successfully.
-
-<!-- BEGIN_TF_DOCS -->
-## Requirements
-
-The following requirements are needed by this module:
-
-- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (~> 1.0)
-
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 4.0)
-
-## Providers
-
-The following providers are used by this module:
-
-- <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) (~> 4.0)
-
-## Resources
-
-The following resources are used by this module:
-
-- [azurerm_batch_account.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/batch_account) (resource)
-- [azurerm_batch_application.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/batch_application) (resource)
-- [azurerm_batch_certificate.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/batch_certificate) (resource)
-- [azurerm_batch_job.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/batch_job) (resource)
-- [azurerm_batch_pool.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/batch_pool) (resource)
-
-## Required Inputs
-
-The following input variables are required:
-
-### <a name="input_batch"></a> [batch](#input\_batch)
-
-Description: describes batch account related configuration
-
-Type:
-
-```hcl
-object({
+variable "batch" {
+  description = "describes batch account related configuration"
+  type = object({
     name                                = string
     location                            = optional(string)
     resource_group_name                 = optional(string)
@@ -291,96 +239,32 @@ object({
       })))
     })))
   })
-```
 
-## Optional Inputs
+  validation {
+    condition     = lookup(var.batch, "location", null) != null || var.location != null
+    error_message = "location must be set on var.batch.location or on the module-level var.location."
+  }
 
-The following input variables are optional (have default values):
+  validation {
+    condition     = lookup(var.batch, "resource_group_name", null) != null || var.resource_group_name != null
+    error_message = "resource_group_name must be set on var.batch.resource_group_name or on the module-level var.resource_group_name."
+  }
+}
 
-### <a name="input_location"></a> [location](#input\_location)
+variable "location" {
+  description = "default azure region to be used."
+  type        = string
+  default     = null
+}
 
-Description: default azure region to be used.
+variable "resource_group_name" {
+  description = "default resource group to be used."
+  type        = string
+  default     = null
+}
 
-Type: `string`
-
-Default: `null`
-
-### <a name="input_resource_group_name"></a> [resource\_group\_name](#input\_resource\_group\_name)
-
-Description: default resource group to be used.
-
-Type: `string`
-
-Default: `null`
-
-### <a name="input_tags"></a> [tags](#input\_tags)
-
-Description: tags to be added to the resources
-
-Type: `map(string)`
-
-Default: `{}`
-
-## Outputs
-
-The following outputs are exported:
-
-### <a name="output_applications"></a> [applications](#output\_applications)
-
-Description: contains all batch applications
-
-### <a name="output_batch"></a> [batch](#output\_batch)
-
-Description: contains all batch account configuration
-
-### <a name="output_certificates"></a> [certificates](#output\_certificates)
-
-Description: contains all batch certificates
-
-### <a name="output_jobs"></a> [jobs](#output\_jobs)
-
-Description: contains all batch jobs
-
-### <a name="output_pools"></a> [pools](#output\_pools)
-
-Description: contains all batch pools
-<!-- END_TF_DOCS -->
-
-## Goals
-
-For more information, please see our [goals and non-goals](./GOALS.md).
-
-## Testing
-
-For more information, please see our testing [guidelines](./TESTING.md)
-
-## Notes
-
-Using a dedicated module, we've developed a naming convention for resources that's based on specific regular expressions for each type, ensuring correct abbreviations and offering flexibility with multiple prefixes and suffixes.
-
-Full examples detailing all usages, along with integrations with dependency modules, are located in the examples directory.
-
-To update the module's documentation run `make docs`
-
-## Authors
-
-Module is maintained by [these awesome contributors](https://github.com/cloudnationhq/terraform-azure-ba/graphs/contributors).
-
-## Contributors
-
-We welcome contributions from the community! Whether it's reporting a bug, suggesting a new feature, or submitting a pull request, your input is highly valued.
-
-For more information, please see our contribution [guidelines](./CONTRIBUTING.md). <br><br>
-
-<a href="https://github.com/cloudnationhq/terraform-azure-ba/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=cloudnationhq/terraform-azure-ba" />
-</a>
-
-## License
-
-MIT Licensed. See [LICENSE](https://github.com/cloudnationhq/terraform-azure-ba/blob/main/LICENSE) for full details.
-
-## References
-
-- [Documentation](https://learn.microsoft.com/en-us/azure/batch/)
-- [Rest Api](https://learn.microsoft.com/en-us/rest/api/batchmanagement/)
+variable "tags" {
+  description = "tags to be added to the resources"
+  type        = map(string)
+  default     = {}
+}
