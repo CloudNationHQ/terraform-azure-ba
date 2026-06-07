@@ -1,69 +1,6 @@
-# Batch
-
-This terraform module simplifies the creation and management of azure batch
-resources, providing customizable options for batch accounts, applications,
-certificates, pools and jobs, all managed through code.
-
-## Features
-
-Capability to handle batch accounts, applications, certificates, pools and jobs.
-
-Supports system and user assigned managed identities on the account and pools.
-
-Supports customer managed key encryption and account network profiles.
-
-Integrates seamlessly with private endpoint capabilities for direct and secure connectivity.
-
-Utilization of terratest for robust validation.
-
-## Private Endpoint
-
-This module embeds private endpoint support directly (`batch.private_endpoints`). Embedding is the right choice when the batch account is managed with public network access disabled in the same terraform apply.
-
-When the private endpoint belongs to a different state file or team (e.g. a platform networking team owns connectivity), use our standalone [terraform-azure-pe](https://github.com/CloudNationHQ/terraform-azure-pe) module instead and keep the account publicly accessible or accept a two-phase apply. Both patterns are supported and the choice belongs to the caller.
-
-## Note
-
-The `azurerm_batch_certificate` resource is deprecated upstream because Azure retired the Batch Account Certificates feature on 2024-02-29; it remains in this module per the module contract and will be removed once the provider drops it. Use pool certificate references or key vault instead.
-
-<!-- BEGIN_TF_DOCS -->
-## Requirements
-
-The following requirements are needed by this module:
-
-- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (~> 1.0)
-
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 4.0)
-
-## Providers
-
-The following providers are used by this module:
-
-- <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) (4.76.0)
-
-## Resources
-
-The following resources are used by this module:
-
-- [azurerm_batch_account.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/batch_account) (resource)
-- [azurerm_batch_application.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/batch_application) (resource)
-- [azurerm_batch_certificate.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/batch_certificate) (resource)
-- [azurerm_batch_job.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/batch_job) (resource)
-- [azurerm_batch_pool.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/batch_pool) (resource)
-- [azurerm_private_endpoint.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_endpoint) (resource)
-
-## Required Inputs
-
-The following input variables are required:
-
-### <a name="input_batch"></a> [batch](#input\_batch)
-
-Description: Contains all batch account configuration
-
-Type:
-
-```hcl
-object({
+variable "batch" {
+  description = "Contains all batch account configuration"
+  type = object({
     name                                = string
     location                            = optional(string)
     resource_group_name                 = optional(string)
@@ -319,61 +256,32 @@ object({
       })))
     })))
   })
-```
 
-## Optional Inputs
+  validation {
+    condition     = var.batch.location != null || var.location != null
+    error_message = "location must be provided either in the batch object or as a separate variable."
+  }
 
-The following input variables are optional (have default values):
+  validation {
+    condition     = var.batch.resource_group_name != null || var.resource_group_name != null
+    error_message = "resource group name must be provided either in the batch object or as a separate variable."
+  }
+}
 
-### <a name="input_location"></a> [location](#input\_location)
+variable "location" {
+  description = "default azure region to use when not set on the batch object"
+  type        = string
+  default     = null
+}
 
-Description: default azure region to use when not set on the batch object
+variable "resource_group_name" {
+  description = "default resource group name to use when not set on the batch object"
+  type        = string
+  default     = null
+}
 
-Type: `string`
-
-Default: `null`
-
-### <a name="input_resource_group_name"></a> [resource\_group\_name](#input\_resource\_group\_name)
-
-Description: default resource group name to use when not set on the batch object
-
-Type: `string`
-
-Default: `null`
-
-### <a name="input_tags"></a> [tags](#input\_tags)
-
-Description: tags to assign to the resources
-
-Type: `map(string)`
-
-Default: `{}`
-
-## Outputs
-
-The following outputs are exported:
-
-### <a name="output_applications"></a> [applications](#output\_applications)
-
-Description: contains all batch applications
-
-### <a name="output_batch"></a> [batch](#output\_batch)
-
-Description: contains all batch account config
-
-### <a name="output_certificates"></a> [certificates](#output\_certificates)
-
-Description: contains all batch certificates
-
-### <a name="output_jobs"></a> [jobs](#output\_jobs)
-
-Description: contains all batch jobs
-
-### <a name="output_pools"></a> [pools](#output\_pools)
-
-Description: contains all batch pools
-
-### <a name="output_private_endpoints"></a> [private\_endpoints](#output\_private\_endpoints)
-
-Description: contains all private endpoints
-<!-- END_TF_DOCS -->
+variable "tags" {
+  description = "tags to assign to the resources"
+  type        = map(string)
+  default     = {}
+}
