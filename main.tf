@@ -354,7 +354,7 @@ resource "azurerm_batch_pool" "this" {
       elevation_level = user_accounts.value.elevation_level
 
       dynamic "linux_user_configuration" {
-        for_each = user_accounts.value.linux_user_configuration != null ? { "this" = user_accounts.value.linux_user_configuration } : {}
+        for_each = user_accounts.value.linux_user_configuration != null ? user_accounts.value.linux_user_configuration : {}
 
         content {
           uid             = linux_user_configuration.value.uid
@@ -364,7 +364,7 @@ resource "azurerm_batch_pool" "this" {
       }
 
       dynamic "windows_user_configuration" {
-        for_each = user_accounts.value.windows_user_configuration != null ? { "this" = user_accounts.value.windows_user_configuration } : {}
+        for_each = user_accounts.value.windows_user_configuration != null ? user_accounts.value.windows_user_configuration : {}
 
         content {
           login_mode = windows_user_configuration.value.login_mode
@@ -383,7 +383,7 @@ resource "azurerm_batch_pool" "this" {
       common_environment_properties = start_task.value.common_environment_properties
 
       dynamic "container" {
-        for_each = start_task.value.container != null ? { "this" = start_task.value.container } : {}
+        for_each = start_task.value.container != null ? start_task.value.container : {}
 
         content {
           image_name        = container.value.image_name

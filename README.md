@@ -39,7 +39,7 @@ The following requirements are needed by this module:
 
 The following providers are used by this module:
 
-- <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) (4.76.0)
+- <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) (~> 4.0)
 
 ## Resources
 
@@ -268,21 +268,21 @@ object({
         name            = string
         password        = string
         elevation_level = string
-        linux_user_configuration = optional(object({
+        linux_user_configuration = optional(map(object({
           uid             = optional(number)
           gid             = optional(number)
           ssh_private_key = optional(string)
-        }))
-        windows_user_configuration = optional(object({
+        })))
+        windows_user_configuration = optional(map(object({
           login_mode = string
-        }))
+        })))
       })))
       start_task = optional(object({
         command_line                  = string
         task_retry_maximum            = optional(number)
         wait_for_success              = optional(bool)
         common_environment_properties = optional(map(string))
-        container = optional(object({
+        container = optional(map(object({
           image_name        = string
           run_options       = optional(string)
           working_directory = optional(string)
@@ -292,7 +292,7 @@ object({
             password                  = optional(string)
             user_assigned_identity_id = optional(string)
           })))
-        }))
+        })))
         user_identity = optional(object({
           user_name = optional(string)
           auto_user = optional(object({
