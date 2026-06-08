@@ -1,6 +1,6 @@
 # Batch
 
-This terraform module simplifies the creation and management of azure batch resources, providing customizable options for batch accounts, applications, certificates, pools and jobs, all managed through code.
+This terraform module simplifies the creation and management of azure batch resources, providing customizable options for batch accounts, applications, pools and jobs, all managed through code.
 
 ## Features
 
@@ -10,11 +10,9 @@ Capability to handle batch applications, pools and jobs.
 
 Supports pool configuration including scaling, container workloads, mounts, start tasks and node networking.
 
+Supports private endpoints for the batchAccount and nodeManagement subresources.
+
 Utilization of terratest for robust validation.
-
-## Certificate Deprecation
-
-The `azurerm_batch_certificate` resource is deprecated upstream, as the azure batch certificates feature has been retired by microsoft. It is retained in this module because it is part of the module contract and azurerm offers no drop-in replacement. The modern pattern is to reference key vault certificates from a pool instead. Terraform emits a deprecation warning for this resource; it still applies successfully.
 
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
@@ -37,9 +35,9 @@ The following resources are used by this module:
 
 - [azurerm_batch_account.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/batch_account) (resource)
 - [azurerm_batch_application.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/batch_application) (resource)
-- [azurerm_batch_certificate.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/batch_certificate) (resource)
 - [azurerm_batch_job.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/batch_job) (resource)
 - [azurerm_batch_pool.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/batch_pool) (resource)
+- [azurerm_private_endpoint.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_endpoint) (resource)
 
 ## Required Inputs
 
@@ -90,18 +88,29 @@ object({
         })))
       }))
     }))
+    private_endpoints = optional(map(object({
+      name                              = optional(string)
+      subnet_resource_id                = string
+      subresource_name                  = optional(string)
+      private_dns_zone_resource_ids     = optional(list(string))
+      custom_network_interface_name     = optional(string)
+      tags                              = optional(map(string))
+      private_service_connection_name   = optional(string)
+      private_connection_resource_alias = optional(string)
+      is_manual_connection              = optional(bool)
+      request_message                   = optional(string)
+      ip_configurations = optional(map(object({
+        name               = optional(string)
+        private_ip_address = optional(string)
+        member_name        = optional(string)
+        subresource_name   = optional(string)
+      })))
+    })))
     applications = optional(map(object({
       name            = optional(string)
       allow_updates   = optional(bool)
       default_version = optional(string)
       display_name    = optional(string)
-    })))
-    certificates = optional(map(object({
-      certificate          = string
-      format               = string
-      thumbprint           = string
-      thumbprint_algorithm = string
-      password             = optional(string)
     })))
     pools = optional(map(object({
       name                           = optional(string)
@@ -333,10 +342,6 @@ Description: contains all batch applications
 
 Description: contains all batch account configuration
 
-### <a name="output_certificates"></a> [certificates](#output\_certificates)
-
-Description: contains all batch certificates
-
 ### <a name="output_jobs"></a> [jobs](#output\_jobs)
 
 Description: contains all batch jobs
@@ -344,6 +349,10 @@ Description: contains all batch jobs
 ### <a name="output_pools"></a> [pools](#output\_pools)
 
 Description: contains all batch pools
+
+### <a name="output_private_endpoints"></a> [private\_endpoints](#output\_private\_endpoints)
+
+Description: contains all batch private endpoints
 <!-- END_TF_DOCS -->
 
 ## Goals

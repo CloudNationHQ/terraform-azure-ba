@@ -72,6 +72,47 @@ resource "azurerm_batch_account" "this" {
   }
 }
 
+# private endpoints
+resource "azurerm_private_endpoint" "this" {
+  for_each = var.batch.private_endpoints != null ? var.batch.private_endpoints : {}
+
+  name                          = coalesce(each.value.name, each.key)
+  resource_group_name           = coalesce(var.batch.resource_group_name, var.resource_group_name)
+  location                      = coalesce(var.batch.location, var.location)
+  subnet_id                     = each.value.subnet_resource_id
+  custom_network_interface_name = each.value.custom_network_interface_name
+  tags                          = coalesce(each.value.tags, var.tags)
+
+  private_service_connection {
+    name                              = coalesce(each.value.private_service_connection_name, "${each.key}-connection")
+    is_manual_connection              = coalesce(each.value.is_manual_connection, false)
+    private_connection_resource_id    = each.value.private_connection_resource_alias != null ? null : azurerm_batch_account.this.id
+    private_connection_resource_alias = each.value.private_connection_resource_alias
+    subresource_names                 = each.value.subresource_name != null ? [each.value.subresource_name] : ["batchAccount"]
+    request_message                   = each.value.request_message
+  }
+
+  dynamic "private_dns_zone_group" {
+    for_each = each.value.private_dns_zone_resource_ids != null ? { "this" = each.value.private_dns_zone_resource_ids } : {}
+
+    content {
+      name                 = "default"
+      private_dns_zone_ids = private_dns_zone_group.value
+    }
+  }
+
+  dynamic "ip_configuration" {
+    for_each = each.value.ip_configurations != null ? each.value.ip_configurations : {}
+
+    content {
+      name               = ip_configuration.value.name
+      private_ip_address = ip_configuration.value.private_ip_address
+      member_name        = ip_configuration.value.member_name
+      subresource_name   = ip_configuration.value.subresource_name
+    }
+  }
+}
+
 # batch application
 resource "azurerm_batch_application" "this" {
   for_each = var.batch.applications != null ? var.batch.applications : {}
@@ -82,22 +123,6 @@ resource "azurerm_batch_application" "this" {
   allow_updates       = each.value.allow_updates
   default_version     = each.value.default_version
   display_name        = each.value.display_name
-}
-
-# batch certificate
-# the azurerm_batch_certificate resource is deprecated upstream (the azure batch
-# certificates feature was retired); it is retained here because the module
-# contract requires managing it and azurerm offers no drop-in replacement.
-resource "azurerm_batch_certificate" "this" {
-  for_each = var.batch.certificates != null ? var.batch.certificates : {}
-
-  resource_group_name  = coalesce(var.batch.resource_group_name, var.resource_group_name)
-  account_name         = azurerm_batch_account.this.name
-  certificate          = each.value.certificate
-  format               = each.value.format
-  thumbprint           = each.value.thumbprint
-  thumbprint_algorithm = each.value.thumbprint_algorithm
-  password             = each.value.password
 }
 
 # batch pool
@@ -445,4 +470,6 @@ resource "azurerm_batch_job" "this" {
   priority                      = each.value.priority
   task_retry_maximum            = each.value.task_retry_maximum
   common_environment_properties = each.value.common_environment_properties
+
+  depends_on = [azurerm_private_endpoint.this]
 }
