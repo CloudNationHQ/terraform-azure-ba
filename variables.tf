@@ -28,14 +28,14 @@ variable "batch" {
         ip_rule = optional(map(object({
           ip_range = string
           action   = optional(string)
-        })))
+        })), {})
       }))
       node_management_access = optional(object({
         default_action = optional(string)
         ip_rule = optional(map(object({
           ip_range = string
           action   = optional(string)
-        })))
+        })), {})
       }))
     }))
     private_endpoints = optional(map(object({
@@ -43,11 +43,13 @@ variable "batch" {
       subnet_resource_id                = string
       subresource_name                  = optional(string)
       private_dns_zone_resource_ids     = optional(list(string))
+      private_dns_zone_group_name       = optional(string, "default")
       custom_network_interface_name     = optional(string)
+      edge_zone                         = optional(string)
       tags                              = optional(map(string))
       private_service_connection_name   = optional(string)
       private_connection_resource_alias = optional(string)
-      is_manual_connection              = optional(bool)
+      is_manual_connection              = optional(bool, false)
       request_message                   = optional(string)
       ip_configurations = optional(map(object({
         name               = optional(string)
@@ -61,7 +63,7 @@ variable "batch" {
       allow_updates   = optional(bool)
       default_version = optional(string)
       display_name    = optional(string)
-    })))
+    })), {})
     pools = optional(map(object({
       name                           = optional(string)
       vm_size                        = string
@@ -136,8 +138,8 @@ variable "batch" {
             priority              = number
             source_address_prefix = string
             source_port_ranges    = optional(list(string))
-          })))
-        })))
+          })), {})
+        })), {})
       }))
       start_task = optional(object({
         command_line                  = string
@@ -153,7 +155,7 @@ variable "batch" {
             user_name                 = optional(string)
             password                  = optional(string)
             user_assigned_identity_id = optional(string)
-          })))
+          })), {})
         }))
         user_identity = optional(object({
           user_name = optional(string)
@@ -170,23 +172,17 @@ variable "batch" {
           http_url                    = optional(string)
           storage_container_url       = optional(string)
           user_assigned_identity_id   = optional(string)
-        })))
+        })), {})
       }))
-      certificate = optional(map(object({
-        id             = string
-        store_location = string
-        store_name     = optional(string)
-        visibility     = optional(set(string))
-      })))
       data_disks = optional(map(object({
         disk_size_gb         = number
         lun                  = number
         caching              = optional(string)
         storage_account_type = optional(string)
-      })))
+      })), {})
       disk_encryption = optional(map(object({
         disk_encryption_target = string
-      })))
+      })), {})
       extensions = optional(map(object({
         name                       = optional(string)
         publisher                  = string
@@ -197,7 +193,7 @@ variable "batch" {
         provision_after_extensions = optional(set(string))
         settings_json              = optional(string)
         type_handler_version       = optional(string)
-      })))
+      })), {})
       mount = optional(map(object({
         azure_blob_file_system = optional(object({
           account_name        = string
@@ -227,7 +223,7 @@ variable "batch" {
           relative_mount_path = string
           mount_options       = optional(string)
         }))
-      })))
+      })), {})
       user_accounts = optional(map(object({
         name            = optional(string)
         elevation_level = string
@@ -240,7 +236,7 @@ variable "batch" {
         windows_user_configuration = optional(object({
           login_mode = string
         }))
-      })))
+      })), {})
       jobs = optional(map(object({
         name                          = optional(string)
         display_name                  = optional(string)
@@ -248,7 +244,7 @@ variable "batch" {
         task_retry_maximum            = optional(number)
         common_environment_properties = optional(map(string))
       })))
-    })))
+    })), {})
   })
 
   validation {
