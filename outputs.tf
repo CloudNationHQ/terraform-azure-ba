@@ -11,6 +11,7 @@ output "applications" {
 output "pools" {
   description = "contains all batch pools"
   value       = azurerm_batch_pool.this
+  sensitive   = true
 }
 
 output "jobs" {

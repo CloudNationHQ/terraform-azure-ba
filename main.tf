@@ -1,9 +1,14 @@
 # batch account
 resource "azurerm_batch_account" "this" {
+  resource_group_name = coalesce(
+    var.batch.resource_group_name, var.resource_group_name
+  )
+
+  location = coalesce(
+    var.batch.location, var.location
+  )
+
   name                                = var.batch.name
-  resource_group_name                 = coalesce(var.batch.resource_group_name, var.resource_group_name)
-  location                            = coalesce(var.batch.location, var.location)
-  tags                                = coalesce(var.batch.tags, var.tags)
   pool_allocation_mode                = var.batch.pool_allocation_mode
   public_network_access_enabled       = var.batch.public_network_access_enabled
   allowed_authentication_modes        = var.batch.allowed_authentication_modes
@@ -11,7 +16,9 @@ resource "azurerm_batch_account" "this" {
   storage_account_authentication_mode = var.batch.storage_account_authentication_mode
   storage_account_node_identity       = var.batch.storage_account_node_identity
 
-  encryption = var.batch.encryption != null ? [var.batch.encryption] : null
+  tags = coalesce(
+    var.batch.tags, var.tags
+  )
 
   dynamic "identity" {
     for_each = var.batch.identity != null ? { "this" = var.batch.identity } : {}
@@ -19,6 +26,14 @@ resource "azurerm_batch_account" "this" {
     content {
       type         = identity.value.type
       identity_ids = identity.value.identity_ids
+    }
+  }
+
+  dynamic "encryption" {
+    for_each = var.batch.encryption != null ? { "this" = var.batch.encryption } : {}
+
+    content {
+      key_vault_key_id = encryption.value.key_vault_key_id
     }
   }
 
@@ -42,7 +57,7 @@ resource "azurerm_batch_account" "this" {
           default_action = account_access.value.default_action
 
           dynamic "ip_rule" {
-            for_each = account_access.value.ip_rule != null ? account_access.value.ip_rule : {}
+            for_each = account_access.value.ip_rule
 
             content {
               ip_range = ip_rule.value.ip_range
@@ -59,7 +74,7 @@ resource "azurerm_batch_account" "this" {
           default_action = node_management_access.value.default_action
 
           dynamic "ip_rule" {
-            for_each = node_management_access.value.ip_rule != null ? node_management_access.value.ip_rule : {}
+            for_each = node_management_access.value.ip_rule
 
             content {
               ip_range = ip_rule.value.ip_range
@@ -76,16 +91,32 @@ resource "azurerm_batch_account" "this" {
 resource "azurerm_private_endpoint" "this" {
   for_each = var.batch.private_endpoints != null ? var.batch.private_endpoints : {}
 
-  name                          = coalesce(each.value.name, each.key)
-  resource_group_name           = coalesce(var.batch.resource_group_name, var.resource_group_name)
-  location                      = coalesce(var.batch.location, var.location)
+  resource_group_name = coalesce(
+    var.batch.resource_group_name, var.resource_group_name
+  )
+
+  location = coalesce(
+    var.batch.location, var.location
+  )
+
+  name = coalesce(
+    each.value.name, each.key
+  )
+
   subnet_id                     = each.value.subnet_resource_id
   custom_network_interface_name = each.value.custom_network_interface_name
-  tags                          = coalesce(each.value.tags, var.tags)
+  edge_zone                     = each.value.edge_zone
+
+  tags = coalesce(
+    each.value.tags, var.tags
+  )
 
   private_service_connection {
-    name                              = coalesce(each.value.private_service_connection_name, "${each.key}-connection")
-    is_manual_connection              = coalesce(each.value.is_manual_connection, false)
+    name = coalesce(
+      each.value.private_service_connection_name, "${each.key}-connection"
+    )
+
+    is_manual_connection              = each.value.is_manual_connection
     private_connection_resource_id    = each.value.private_connection_resource_alias != null ? null : azurerm_batch_account.this.id
     private_connection_resource_alias = each.value.private_connection_resource_alias
     subresource_names                 = each.value.subresource_name != null ? [each.value.subresource_name] : ["batchAccount"]
@@ -96,7 +127,7 @@ resource "azurerm_private_endpoint" "this" {
     for_each = each.value.private_dns_zone_resource_ids != null ? { "this" = each.value.private_dns_zone_resource_ids } : {}
 
     content {
-      name                 = "default"
+      name                 = each.value.private_dns_zone_group_name
       private_dns_zone_ids = private_dns_zone_group.value
     }
   }
@@ -115,22 +146,34 @@ resource "azurerm_private_endpoint" "this" {
 
 # batch application
 resource "azurerm_batch_application" "this" {
-  for_each = var.batch.applications != null ? var.batch.applications : {}
+  for_each = var.batch.applications
 
-  name                = coalesce(each.value.name, replace(each.key, "_", "-"))
-  resource_group_name = coalesce(var.batch.resource_group_name, var.resource_group_name)
-  account_name        = azurerm_batch_account.this.name
-  allow_updates       = each.value.allow_updates
-  default_version     = each.value.default_version
-  display_name        = each.value.display_name
+  name = coalesce(
+    each.value.name, replace(each.key, "_", "-")
+  )
+
+  resource_group_name = coalesce(
+    var.batch.resource_group_name, var.resource_group_name
+  )
+
+  account_name    = azurerm_batch_account.this.name
+  allow_updates   = each.value.allow_updates
+  default_version = each.value.default_version
+  display_name    = each.value.display_name
 }
 
 # batch pool
 resource "azurerm_batch_pool" "this" {
-  for_each = var.batch.pools != null ? var.batch.pools : {}
+  for_each = var.batch.pools
 
-  name                           = coalesce(each.value.name, replace(each.key, "_", "-"))
-  resource_group_name            = coalesce(var.batch.resource_group_name, var.resource_group_name)
+  name = coalesce(
+    each.value.name, replace(each.key, "_", "-")
+  )
+
+  resource_group_name = coalesce(
+    var.batch.resource_group_name, var.resource_group_name
+  )
+
   account_name                   = azurerm_batch_account.this.name
   vm_size                        = each.value.vm_size
   node_agent_sku_id              = each.value.node_agent_sku_id
@@ -240,7 +283,7 @@ resource "azurerm_batch_pool" "this" {
       subnet_id                        = network_configuration.value.subnet_id
 
       dynamic "endpoint_configuration" {
-        for_each = network_configuration.value.endpoint_configuration != null ? network_configuration.value.endpoint_configuration : {}
+        for_each = network_configuration.value.endpoint_configuration
 
         content {
           name                = coalesce(endpoint_configuration.value.name, replace(endpoint_configuration.key, "_", "-"))
@@ -249,7 +292,7 @@ resource "azurerm_batch_pool" "this" {
           protocol            = endpoint_configuration.value.protocol
 
           dynamic "network_security_group_rules" {
-            for_each = endpoint_configuration.value.network_security_group_rules != null ? endpoint_configuration.value.network_security_group_rules : {}
+            for_each = endpoint_configuration.value.network_security_group_rules
 
             content {
               access                = network_security_group_rules.value.access
@@ -281,7 +324,7 @@ resource "azurerm_batch_pool" "this" {
           working_directory = container.value.working_directory
 
           dynamic "registry" {
-            for_each = container.value.registry != null ? container.value.registry : {}
+            for_each = container.value.registry
 
             content {
               registry_server           = registry.value.registry_server
@@ -311,7 +354,7 @@ resource "azurerm_batch_pool" "this" {
       }
 
       dynamic "resource_file" {
-        for_each = start_task.value.resource_file != null ? start_task.value.resource_file : {}
+        for_each = start_task.value.resource_file
 
         content {
           auto_storage_container_name = resource_file.value.auto_storage_container_name
@@ -326,19 +369,8 @@ resource "azurerm_batch_pool" "this" {
     }
   }
 
-  dynamic "certificate" {
-    for_each = each.value.certificate != null ? each.value.certificate : {}
-
-    content {
-      id             = certificate.value.id
-      store_location = certificate.value.store_location
-      store_name     = certificate.value.store_name
-      visibility     = certificate.value.visibility
-    }
-  }
-
   dynamic "data_disks" {
-    for_each = each.value.data_disks != null ? each.value.data_disks : {}
+    for_each = each.value.data_disks
 
     content {
       disk_size_gb         = data_disks.value.disk_size_gb
@@ -349,7 +381,7 @@ resource "azurerm_batch_pool" "this" {
   }
 
   dynamic "disk_encryption" {
-    for_each = each.value.disk_encryption != null ? each.value.disk_encryption : {}
+    for_each = each.value.disk_encryption
 
     content {
       disk_encryption_target = disk_encryption.value.disk_encryption_target
@@ -357,10 +389,13 @@ resource "azurerm_batch_pool" "this" {
   }
 
   dynamic "extensions" {
-    for_each = each.value.extensions != null ? each.value.extensions : {}
+    for_each = each.value.extensions
 
     content {
-      name                       = coalesce(extensions.value.name, replace(extensions.key, "_", "-"))
+      name = coalesce(
+        extensions.value.name, replace(extensions.key, "_", "-")
+      )
+
       publisher                  = extensions.value.publisher
       type                       = extensions.value.type
       auto_upgrade_minor_version = extensions.value.auto_upgrade_minor_version
@@ -373,7 +408,7 @@ resource "azurerm_batch_pool" "this" {
   }
 
   dynamic "mount" {
-    for_each = each.value.mount != null ? each.value.mount : {}
+    for_each = each.value.mount
 
     content {
       dynamic "azure_blob_file_system" {
@@ -427,10 +462,13 @@ resource "azurerm_batch_pool" "this" {
   }
 
   dynamic "user_accounts" {
-    for_each = each.value.user_accounts != null ? each.value.user_accounts : {}
+    for_each = each.value.user_accounts
 
     content {
-      name            = coalesce(user_accounts.value.name, replace(user_accounts.key, "_", "-"))
+      name = coalesce(
+        user_accounts.value.name, replace(user_accounts.key, "_", "-")
+      )
+
       elevation_level = user_accounts.value.elevation_level
       password        = user_accounts.value.password
 
@@ -464,7 +502,10 @@ resource "azurerm_batch_job" "this" {
     }
   ]...)
 
-  name                          = coalesce(each.value.name, replace(each.value.job_key, "_", "-"))
+  name = coalesce(
+    each.value.name, replace(each.value.job_key, "_", "-")
+  )
+
   batch_pool_id                 = azurerm_batch_pool.this[each.value.pool_key].id
   display_name                  = each.value.display_name
   priority                      = each.value.priority
