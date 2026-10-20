@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.0](https://github.com/CloudNationHQ/terraform-azure-ba/compare/v2.0.0...v2.1.0) (2026-10-20)
+
+
+### Features
+
+* **deps:** bump github.com/klauspost/compress in /tests ([#17](https://github.com/CloudNationHQ/terraform-azure-ba/issues/17)) ([57b2d47](https://github.com/CloudNationHQ/terraform-azure-ba/commit/57b2d47e797ffa148f5be45b431d95cea74ce576))
+
 ## [2.0.0](https://github.com/CloudNationHQ/terraform-azure-ba/compare/v1.0.0...v2.0.0) (2026-09-21)
 
 
